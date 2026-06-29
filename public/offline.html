@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hors connexion - Secours Bénin</title>
+    <style>
+        body {
+            font-family: 'Poppins', Arial, sans-serif;
+            background-color: #0A2540;
+            color: #fff;
+            height: 100vh;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 1.5rem;
+        }
+        .box { max-width: 380px; }
+        .icon { font-size: 3rem; margin-bottom: 1rem; }
+        h1 { font-size: 1.4rem; margin-bottom: 0.5rem; }
+        p { color: rgba(255,255,255,0.7); margin-bottom: 1.5rem; }
+        button {
+            background: #FF5252;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="box">
+        <div class="icon">📡</div>
+        <h1>Pas de connexion internet</h1>
+        <p>Vérifiez votre connexion réseau. Vos données seront synchronisées dès que vous serez à nouveau en ligne.</p>
+        <button onclick="window.location.reload()">Réessayer</button>
+    </div>
+</body>
+</html>

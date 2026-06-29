@@ -1,0 +1,130 @@
+Voici la liste précise et structurée des pages front-end à réaliser, adaptée exclusivement à votre stack technique (**Bootstrap 5, FontAwesome, JavaScript Vanilla**) et à vos exigences de design exceptionnel, responsive et aux couleurs définies (Bleu, Blanc, Rouge léger).
+
+---
+
+### 🎨 Système de Design Global (Directives UI/UX)
+Pour garantir un design "hors du commun" tout en restant fonctionnel :
+- **Palette de couleurs** : 
+  - *Primaire* : Bleu profond (`#0A2540` ou `#1565C0`) pour la confiance et le sérieux médical.
+  - *Fond* : Blanc pur (`#FFFFFF`) et gris très clair (`#F8F9FA`) pour la lisibilité maximale.
+  - *Accent/Urgence* : Rouge léger/corail (`#FF5252` ou `#EF5350`) utilisé avec parcimonie pour les boutons d'action critique, les alertes et les indicateurs d'état.
+- **Typographie** : Police sans-serif moderne (ex: *Inter* ou *Poppins* via Google Fonts) pour une lisibilité optimale sur mobile.
+- **Composants Bootstrap personnalisés** : Utilisation de `border-radius` adoucis, d'ombres portées subtiles (`shadow-sm`), d'effets de survol fluides (transitions CSS) et de *glassmorphism* léger pour les modales.
+- **Responsive** : Approche *Mobile-First* stricte pour le Citoyen et l'Ambulancier (grille `col-12` à `col-md-6`), et *Desktop-First* optimisé pour le Régulateur/Administrateur (tableaux de bord en `col-lg-3` / `col-lg-9`).
+
+---
+
+### 1. Interface Citoyen (PWA Mobile-First)
+*Design épuré, boutons larges (min. 48px de hauteur pour le tactile), icônes FontAwesome explicites.*
+
+1. **`auth.html` (Authentification)** : 
+   - Design minimaliste centré. Champ de saisie de numéro avec indicatif pays, bouton "Recevoir le code OTP". Écran de saisie OTP avec 4 cases distinctes et focus automatique.
+2. **`consentement.html` (Validation légale)** : 
+   - Mise en page claire avec icône de bouclier (FontAwesome). Texte lisible, case à cocher personnalisée (style Bootstrap `form-check`) pour l'acceptation des CGU et de la Politique de Confidentialité.
+3. **`nouvelle-alerte.html` (Cœur du système)** : 
+   - Formulaire en 4 étapes max. Sélecteur de commune stylisé. Indicateur GPS animé (pulsation bleue). 
+   - Module photo : Bouton large avec icône caméra, déclenchant l'API `getUserMedia` ou `<input type="file" capture="environment">`. Message de consentement explicite affiché dans une `alert alert-info` avant l'envoi.
+   - Bouton d'envoi principal en rouge léger, avec indicateur de chargement (spinner Bootstrap) pour la compression et l'upload.
+4. **`suivi-alerte.html` (Temps réel)** : 
+   - Timeline verticale personnalisée (CSS + Bootstrap) montrant les 3 états : *Reçu*, *Ambulance en route (avec ETA)*, *Arrivée sur place*. Intégration d'un conteneur pour la carte Leaflet.js.
+5. **`historique.html`** : 
+   - Liste de cartes (`card`) épurées, affichant la date, la commune et un badge de statut (succès/annulé) avec code couleur.
+6. **`mentions-legales.html`** : 
+   - Page texte simple, bien aérée, avec une navigation facile vers l'accueil.
+
+---
+
+### 2. Interface Régulateur SAMU (PWA Tablette / Desktop)
+*Design dense mais aéré, priorité à la visibilité des alertes et à la réactivité.*
+
+1. **`login-regulateur.html`** : 
+   - Écran de connexion sécurisé, centré, avec fond bleu profond et logo du projet en blanc.
+2. **`dashboard.html` (Tableau de bord temps réel)** : 
+   - Layout en grille : Sidebar de navigation rétractable (Bootstrap Offcanvas sur mobile). 
+   - Zone principale : Liste des alertes entrantes. Les nouvelles alertes doivent avoir une animation de pulsation rouge légère (`@keyframes`) et une notification sonore (gérée en JS).
+   - Cartes KPI en haut (Alertes du jour, Temps moyen).
+3. **`vue-dispatch.html` (Détail et Assignation)** : 
+   - Layout en deux colonnes (`col-lg-7` pour la carte, `col-lg-5` pour les détails). 
+   - Affichage en grand de la photo de la scène, des coordonnées GPS et de la description.
+   - Liste des ambulances sous forme de cartes cliquables avec badge de statut (Vert: Disponible, Orange: En mission). Bouton "Dispatcher" en rouge léger, large et visible.
+4. **`gestion-flotte.html`** : 
+   - Tableau Bootstrap (`table table-hover`) avec filtres. Colonnes : Matricule, Chauffeur, Statut (modifiable via un `select` stylisé), Dernière position.
+5. **`statistiques.html`** : 
+   - Conteneurs prévus pour les graphiques (ex: Chart.js), avec des cartes de résumé en haut de page.
+
+---
+
+### 3. Interface Ambulancier (PWA Mobile-First)
+*Design à fort contraste, lisible en plein soleil, boutons d'action géants.*
+
+1. **`login-ambulancier.html`** : 
+   - Similaire au régulateur, optimisé pour la saisie mobile.
+2. **`missions.html` (Tableau de bord)** : 
+   - Liste des missions. La mission active est mise en avant dans une carte avec une bordure rouge légère et une ombre prononcée.
+3. **`mission-active.html` (Navigation et Action)** : 
+   - Haut de page : Détails de l'adresse et bouton "Ouvrir l'itinéraire" (icône FontAwesome `fa-directions`).
+   - Milieu : Miniature de la photo de la scène (cliquable pour agrandissement en modale Bootstrap).
+   - Bas de page (Sticky footer) : Trois boutons d'action full-width, séquentiels et colorés : 
+     - *Départ* (Bleu)
+     - *Arrivé sur place* (Rouge léger)
+     - *Mission terminée* (Vert, activé uniquement après "Arrivé").
+4. **`historique-chauffeur.html`** : 
+   - Tableau simple ou liste de cartes résumant les missions passées avec les horodatages.
+
+---
+
+### 4. Interface Administrateur (Web Classique Desktop)
+*Design professionnel, axé sur la gestion de données et l'analyse.*
+
+1. **`admin-dashboard.html`** : 
+   - Vue d'ensemble avec graphiques de performance, répartition des alertes par commune (carte thermique ou camembert).
+2. **`gestion-utilisateurs.html`** : 
+   - Tableau de données avancé avec barre de recherche, pagination Bootstrap et boutons d'action (Modifier, Suspendre, Bloquer) utilisant des icônes FontAwesome (`fa-edit`, `fa-ban`). Modale Bootstrap pour l'édition.
+3. **`gestion-territoire.html`** : 
+   - Interface de configuration des communes et de leur rattachement aux centres SAMU (formulaires avec listes déroulantes liées).
+4. **`moderation.html`** : 
+   - Liste des alertes signalées comme "fausses". Affichage de la photo et des métadonnées pour validation par l'admin, avec bouton "Bloquer le compte citoyen" (rouge).
+5. **`rapports.html`** : 
+   - Interface de sélection de période (datepickers) et de centre, avec un bouton proéminent "Exporter en PDF" (déclenchant la génération côté client ou appel API).
+
+---
+
+### ⚙️ Recommandations d'implémentation JavaScript Vanilla
+- **Gestion du routing** : Utiliser une navigation par ancres ou un routeur JS simple pour éviter les rechargements de page complets sur les PWA, assurant une expérience "app-like".
+- **Notifications** : Utiliser les `Toast` de Bootstrap 5, positionnés en haut à droite, pour les confirmations d'actions (ex: "Alerte envoyée", "Statut mis à jour").
+- **Mode dégradé (PWA)** : Implémenter un `Service Worker` basique pour mettre en cache les assets (CSS Bootstrap, FontAwesome, JS) et afficher une page `offline.html` stylisée en cas de perte de réseau.
+- **Accessibilité** : Respecter les attributs `aria-label` sur tous les boutons icônes et assurer un contraste suffisant entre le texte et le fond (surtout pour le rouge léger sur blanc).
+
+
+
+le design est mal fait reprend et surpasse toi faire des choses qui sorte de l'ordinaire des animations au niveau des onglet je veux pas de couleur sombres et commence par le premier fichier de cette aborressance : projet-conversion-universelle/
+│
+├── index.html                      # Accueil (Hub avec recherche et grille d'outils)
+├── calculateur-imc.html            # Outil IMC complet (HTML + CSS + JS dédiés)
+│
+├── convertisseur-masse.html        # Hub Masse (Moteur JS configuré pour kg, lb, tonne, sicle...)
+├── convertisseur-longueur.html     # Hub Longueur (Moteur JS configuré pour m, cm, ft, coudée...)
+├── convertisseur-volume.html       # Hub Volume (Moteur JS configuré pour l, ml, gallon...)
+├── convertisseur-temperature.html  # Hub Température (Moteur JS avec logique non-linéaire °C/°F/K)
+├── convertisseur-donnees.html      # Hub Données (Moteur JS pour bit, octet, Ko, Mo, Go, To)
+│
+├── coudee-en-metre.html            # SEO Longue traîne (Moteur pré-réglé Coudée ↔ Mètre + Texte SEO)
+├── sicle-en-kg.html                # SEO Longue traîne (Moteur pré-réglé Sicle ↔ Kg + Texte SEO)
+│
+├── a-propos.html                   # Page de crédibilité (E-E-A-T)
+├── contact.html                    # Page de contact
+├── plan-du-site.html               # Plan du site HTML (liste des liens)
+├── 404.html                        # Page d'erreur personnalisée
+│
+├── legal/                          # Organisation propre des pages obligatoires AdSense
+│   ├── politique-confidentialite.html
+│   ├── conditions-utilisation.html
+│   ├── mentions-legales.html
+│   └── politique-cookies.html
+│
+├── _snippets/                      # 📁 Dossier de travail (UNIQUEMENT pour le développeur)
+│   ├── engine-conversion.js        # Le code JS maître du moteur (à copier-coller dans les pages)
+│   └── style-base.css              # Le CSS maître (à copier-coller dans les pages)
+│
+├── sitemap.xml                     # Plan du site XML pour Google
+└── robots.txt                      # Instructions pour les robots d'exploration
