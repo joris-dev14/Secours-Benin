@@ -32,7 +32,7 @@
         <div class="form-check text-start mb-4 p-3" style="background: var(--bg-light); border-radius: 12px;">
             <input class="form-check-input mt-1" type="checkbox" id="consentCheck" onchange="toggleButton()">
             <label class="form-check-label small fw-semibold" for="consentCheck">
-                J'accepte les <a href="{{ url('/citoyen/mentions-legales') }}" class="text-decoration-none" style="color: var(--primary-blue);">Conditions Générales</a> et la <a href="{{ url('/citoyen/mentions-legales') }}" class="text-decoration-none" style="color: var(--primary-blue);">Politique de Confidentialité</a>.
+                J'accepte les <a href="{{ url('/mentions-legales') }}" class="text-decoration-none" style="color: var(--primary-blue);">Conditions Générales</a> et la <a href="{{ url('/mentions-legales') }}" class="text-decoration-none" style="color: var(--primary-blue);">Politique de Confidentialité</a>.
             </label>
         </div>
 

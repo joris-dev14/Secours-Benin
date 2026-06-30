@@ -33,24 +33,54 @@
     <div class="map-container" id="map"></div>
     
     <div class="tracking-card">
-        <h5 class="fw-bold mb-1">Ambulance en route</h5>
-        <p class="text-muted small mb-3">Arrivée estimée dans <span class="fw-bold text-danger">8 min</span></p>
+        <h5 class="fw-bold mb-1">{{ $alerte ? 'Suivi de votre alerte' : 'Aucune alerte en cours' }}</h5>
+        <p class="text-muted small mb-3">
+            @if($alerte)
+                @if($mission)
+                    Statut : <span class="fw-bold text-danger">{{ strtoupper(str_replace('_', ' ', $mission->statut)) }}</span>
+                @else
+                    Votre demande est enregistrée et en attente de traitement.
+                @endif
+            @else
+                Aucune alerte n'a encore été enregistrée.
+            @endif
+        </p>
         
+        @php
+            $hasMission = (bool) $mission;
+            $isOnSite = $mission && in_array($mission->statut, ['sur_place', 'terminee']);
+            $isEnRoute = $mission && $mission->statut === 'en_route';
+        @endphp
+
         <div class="timeline">
             <div class="timeline-item completed">
                 <div class="timeline-dot"></div>
                 <h6 class="fw-bold mb-1">Alerte reçue</h6>
-                <p class="small text-muted mb-0">14:32 - Centre de régulation Cotonou</p>
+                <p class="small text-muted mb-0">{{ $alerte ? $alerte->created_at->locale('fr')->isoFormat('DD MMM YYYY • HH:mm') : 'Aucune alerte' }}</p>
             </div>
-            <div class="timeline-item active" id="step-en-route">
+            <div class="timeline-item {{ $hasMission ? 'completed' : ($alerte ? 'active' : '') }}" id="step-en-route">
                 <div class="timeline-dot"></div>
-                <h6 class="fw-bold mb-1">Ambulance dispatchée</h6>
-                <p class="small text-muted mb-0">Véhicule A-104 en chemin vers votre position</p>
+                <h6 class="fw-bold mb-1">{{ $hasMission ? 'Ambulance dispatchée' : 'En attente d’assignation' }}</h6>
+                <p class="small text-muted mb-0">
+                    @if($mission && $mission->ambulance)
+                        Véhicule {{ $mission->ambulance->matricule }} • {{ strtoupper(str_replace('_', ' ', $mission->statut)) }}.
+                    @else
+                        Aucune ambulance assignée pour le moment.
+                    @endif
+                </p>
             </div>
-            <div class="timeline-item" id="step-arrive">
+            <div class="timeline-item {{ $isOnSite ? 'completed' : ($isEnRoute ? 'active' : '') }}" id="step-arrive">
                 <div class="timeline-dot"></div>
-                <h6 class="fw-bold mb-1 text-muted">Arrivée sur les lieux</h6>
-                <p class="small text-muted mb-0">En attente...</p>
+                <h6 class="fw-bold mb-1 {{ $isOnSite ? '' : 'text-muted' }}">{{ $isEnRoute ? 'Ambulance en route' : ($isOnSite ? 'Arrivée sur les lieux' : 'En attente...') }}</h6>
+                <p class="small text-muted mb-0">
+                    @if($isOnSite)
+                        Intervention en cours ou terminée.
+                    @elseif($isEnRoute)
+                        L’ambulance est en route vers votre position.
+                    @else
+                        En attente de la progression de la mission.
+                    @endif
+                </p>
             </div>
         </div>
 
@@ -70,15 +100,6 @@
 
         // Marqueur utilisateur
         L.marker([6.3654, 2.4183]).addTo(map).bindPopup("Votre position").openPopup();
-        
-        // Simulation d'avancement (pour la démo)
-        setTimeout(() => {
-            document.getElementById('step-en-route').classList.remove('active');
-            document.getElementById('step-en-route').classList.add('completed');
-            document.getElementById('step-arrive').classList.add('active');
-            document.querySelector('.tracking-card h5').textContent = "L'ambulance est arrivée";
-            document.querySelector('.tracking-card .text-danger').textContent = "0 min";
-        }, 5000); // Change de statut après 5 secondes pour la démo
     </script>
 
 @include('partials.pwa-register')

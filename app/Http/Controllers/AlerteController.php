@@ -55,7 +55,16 @@ class AlerteController extends Controller
         if (!session('citoyen_id')) {
             return redirect('/citoyen/auth');
         }
-        return view('citoyen.suivi-alerte');
+
+        $citoyen = Citoyen::find(session('citoyen_id'));
+        $alerte = $citoyen
+            ? $citoyen->alertes()->latest()->first()
+            : null;
+        $mission = $alerte
+            ? $alerte->mission()->with('ambulance')->first()
+            : null;
+
+        return view('citoyen.suivi-alerte', compact('alerte', 'mission'));
     }
 
     public function historique()

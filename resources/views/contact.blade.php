@@ -159,23 +159,27 @@
                     <div class="form-card">
                         <span class="section-badge">Formulaire de contact</span>
                         <h3 class="fw-bold mb-4">Envoyez-nous un message</h3>
-                        <form id="contactForm" onsubmit="submitForm(event)">
+                        <form id="contactForm" method="POST" action="{{ url('/contact') }}">
+                            @csrf
+                            @if (session('success'))
+                                <div class="alert alert-success">{{ session('success') }}</div>
+                            @endif
                             <div class="row g-3">
                                 <div class="col-md-6">
                                     <label class="form-label">Nom complet *</label>
-                                    <input type="text" class="form-control" required placeholder="Votre nom">
+                                    <input type="text" class="form-control" name="nom" required placeholder="Votre nom">
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label">Email *</label>
-                                    <input type="email" class="form-control" required placeholder="votre@email.com">
+                                    <input type="email" class="form-control" name="email" required placeholder="votre@email.com">
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label">Téléphone</label>
-                                    <input type="tel" class="form-control" placeholder="+229 XX XX XX XX">
+                                    <input type="tel" class="form-control" name="telephone" placeholder="+229 XX XX XX XX">
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label">Sujet *</label>
-                                    <select class="form-select" required>
+                                    <select class="form-select" name="sujet" required>
                                         <option value="">Sélectionnez...</option>
                                         <option>Demande d'information</option>
                                         <option>Partenariat</option>
@@ -186,13 +190,13 @@
                                 </div>
                                 <div class="col-12">
                                     <label class="form-label">Message *</label>
-                                    <textarea class="form-control" rows="5" required placeholder="Votre message..."></textarea>
+                                    <textarea class="form-control" name="message" rows="5" required placeholder="Votre message..."></textarea>
                                 </div>
                                 <div class="col-12">
                                     <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" id="consentCheck" required>
+                                        <input class="form-check-input" type="checkbox" name="consent" id="consentCheck" required>
                                         <label class="form-check-label small" for="consentCheck">
-                                            J'accepte que mes données soient traitées conformément à la <a href="#" style="color: var(--accent-red);">politique de confidentialité</a> *
+                                            J'accepte que mes données soient traitées conformément à la <a href="{{ url('/mentions-legales') }}" style="color: var(--accent-red);">politique de confidentialité</a> *
                                         </label>
                                     </div>
                                 </div>

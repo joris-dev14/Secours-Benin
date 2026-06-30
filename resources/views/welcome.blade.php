@@ -234,29 +234,29 @@
                 <div class="col-md-3 col-6" data-aos="fade-up" data-aos-delay="0">
                     <div class="stat-item">
                         <div class="stat-icon"><i class="fa-solid fa-truck-medical"></i></div>
-                        <div class="stat-number" data-count="144">0</div>
+                        <div class="stat-number" data-count="{{ $ambulancesCount }}">0</div>
                         <div class="stat-label">Ambulances</div>
                     </div>
                 </div>
                 <div class="col-md-3 col-6" data-aos="fade-up" data-aos-delay="100">
                     <div class="stat-item">
                         <div class="stat-icon"><i class="fa-solid fa-city"></i></div>
-                        <div class="stat-number" data-count="77">0</div>
+                        <div class="stat-number" data-count="{{ $communesCount }}">0</div>
                         <div class="stat-label">Communes couvertes</div>
                     </div>
                 </div>
                 <div class="col-md-3 col-6" data-aos="fade-up" data-aos-delay="200">
                     <div class="stat-item">
                         <div class="stat-icon"><i class="fa-solid fa-stopwatch"></i></div>
-                        <div class="stat-number"><span data-count="8">0</span> min</div>
+                        <div class="stat-number"><span data-count="{{ $avgResponseTime }}">0</span> min</div>
                         <div class="stat-label">Temps moyen</div>
                     </div>
                 </div>
                 <div class="col-md-3 col-6" data-aos="fade-up" data-aos-delay="300">
                     <div class="stat-item">
                         <div class="stat-icon"><i class="fa-solid fa-heart-pulse"></i></div>
-                        <div class="stat-number" data-count="24">0</span>/7</div>
-                        <div class="stat-label">Disponibilité</div>
+                        <div class="stat-number" data-count="{{ $alertesCount }}">0</div>
+                        <div class="stat-label">Alertes enregistrées</div>
                     </div>
                 </div>
             </div>

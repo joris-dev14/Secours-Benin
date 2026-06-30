@@ -113,7 +113,7 @@
                         "GPS localisé : " + position.coords.latitude.toFixed(4) + "° N, " + position.coords.longitude.toFixed(4) + "° E";
                 },
                 () => {
-                    document.getElementById('gpsText').textContent = "GPS non disponible";
+                    document.getElementById('gpsText').textContent = "Localisation non disponible";
                 }
             );
         }

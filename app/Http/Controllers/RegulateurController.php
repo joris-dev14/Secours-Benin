@@ -63,6 +63,23 @@ class RegulateurController extends Controller
             'communes' => $communesInDepartment,
         ];
     }
+
+    private function calculateDistanceKm(?float $lat1, ?float $lon1, ?float $lat2, ?float $lon2): ?float
+    {
+        if ($lat1 === null || $lon1 === null || $lat2 === null || $lon2 === null) {
+            return null;
+        }
+
+        $earthRadius = 6371;
+        $dLat = deg2rad($lat2 - $lat1);
+        $dLon = deg2rad($lon2 - $lon1);
+        $a = sin($dLat / 2) * sin($dLat / 2)
+            + cos(deg2rad($lat1)) * cos(deg2rad($lat2))
+            * sin($dLon / 2) * sin($dLon / 2);
+        $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
+
+        return round($earthRadius * $c, 1);
+    }
  
     public function dashboard()    {
         if (!session('regulateur_id')) {
@@ -158,48 +175,80 @@ public function exportPdf()
             ->with('citoyen')
             ->get();
 
-        $ambulances = Ambulance::where('statut', 'disponible')
-            ->whereRaw('LOWER(commune) = ?', [mb_strtolower($territoire['commune'])])
-            ->get();
+        $alerte = $alertes->first();
+        $availableAmbulanciers = collect();
 
-        return view('regulateur.vue-dispatch', compact('alertes', 'ambulances'));
+        if ($alerte) {
+            $availableAmbulanciers = \App\Models\Ambulancier::with('ambulance')
+                ->where('statut', 'disponible')
+                ->whereRaw('LOWER(centre) = ?', [mb_strtolower($territoire['commune'])])
+                ->whereNotNull('ambulance_id')
+                ->whereHas('ambulance', function ($query) {
+                    $query->where('statut', 'disponible');
+                })
+                ->get();
+
+            $availableAmbulanciers->each(function ($ambulancier) use ($alerte) {
+                $ambulance = $ambulancier->ambulance;
+                $ambulancier->distance_km = $this->calculateDistanceKm(
+                    (float) $alerte->latitude,
+                    (float) $alerte->longitude,
+                    (float) $ambulance->latitude,
+                    (float) $ambulance->longitude
+                );
+                $ambulancier->distance_label = $ambulancier->distance_km === null ? 'Position non disponible' : $ambulancier->distance_km . ' km';
+            });
+
+            $availableAmbulanciers = $availableAmbulanciers->sortBy(fn ($ambulancier) => $ambulancier->distance_km ?? PHP_INT_MAX)->values();
+        }
+
+        return view('regulateur.vue-dispatch', compact('alertes', 'availableAmbulanciers'));
     }
 
     public function dispatcher(Request $request)
-{
-    if (!session('regulateur_id')) {
-        return redirect('/regulateur/login');
+    {
+        if (!session('regulateur_id')) {
+            return redirect('/regulateur/login');
+        }
+
+        $request->validate([
+            'alerte_id'      => 'required|exists:alertes,id',
+            'ambulancier_id' => 'required|exists:ambulanciers,id',
+        ]);
+
+        $regulateur = Regulateur::find(session('regulateur_id'));
+        $territoire = $this->resolveTerritory($regulateur);
+        $communesLower  = $territoire['communes']->map(fn($commune) => mb_strtolower($commune))->toArray();
+
+        $alerte = Alerte::where('id', $request->alerte_id)
+            ->whereIn(DB::raw('LOWER(commune)'), $communesLower)
+            ->firstOrFail();
+
+        $ambulancier = \App\Models\Ambulancier::with('ambulance')
+            ->where('id', $request->ambulancier_id)
+            ->where('statut', 'disponible')
+            ->whereRaw('LOWER(centre) = ?', [mb_strtolower($territoire['commune'])])
+            ->whereNotNull('ambulance_id')
+            ->firstOrFail();
+
+        $ambulance = $ambulancier->ambulance;
+        abort_if(!$ambulance || $ambulance->statut !== 'disponible', 404);
+
+        DB::transaction(function () use ($alerte, $ambulance, $ambulancier) {
+            $mission = Mission::firstOrNew(['alerte_id' => $alerte->id]);
+            $mission->fill([
+                'ambulance_id' => $ambulance->id,
+                'statut'       => 'assignee',
+                'depart_a'     => $mission->depart_a,
+            ])->save();
+
+            $alerte->update(['statut' => 'prise_en_charge']);
+            $ambulance->update(['statut' => 'en_mission', 'ambulancier_id' => $ambulancier->id]);
+            $ambulancier->update(['statut' => 'en_mission', 'ambulance_id' => $ambulance->id]);
+        });
+
+        return redirect('/regulateur/dispatch')->with('success', 'Dispatch effectué avec succès !');
     }
-
-    $request->validate([
-        'alerte_id'    => 'required|exists:alertes,id',
-        'ambulance_id' => 'required|exists:ambulances,id',
-    ]);
-
-    $regulateur = Regulateur::find(session('regulateur_id'));
-    $territoire = $this->resolveTerritory($regulateur);
-    $communesLower  = $territoire['communes']->map(fn($commune) => mb_strtolower($commune))->toArray();
-
-    $alerte = Alerte::where('id', $request->alerte_id)
-        ->whereIn(DB::raw('LOWER(commune)'), $communesLower)
-        ->firstOrFail();
-
-    $ambulance = Ambulance::where('id', $request->ambulance_id)
-        ->where('statut', 'disponible')
-        ->whereRaw('LOWER(commune) = ?', [mb_strtolower($territoire['commune'])])
-        ->firstOrFail();
-
-    Mission::create([
-        'alerte_id'    => $alerte->id,
-        'ambulance_id' => $ambulance->id,
-        'statut'       => 'assignee',
-    ]);
-
-    $alerte->update(['statut' => 'prise_en_charge']);
-    $ambulance->update(['statut' => 'en_mission']);
-
-    return redirect('/regulateur/dashboard')->with('success', 'Ambulance dispatchée avec succès !');
-}
 
     public function flotte(Request $request)
     {

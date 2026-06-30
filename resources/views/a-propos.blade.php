@@ -72,7 +72,6 @@
             .timeline-item { padding-left: 50px; }
         }
     </style>
-    @include('partials.pwa-head')
 </head>
 <body>
     <!-- Navbar -->
@@ -219,7 +218,7 @@
                             <div class="timeline-content">
                                 <span class="timeline-year">2025 - 2026</span>
                                 <h5 class="fw-bold">Conception & Développement (PFE)</h5>
-                                <p class="text-muted mb-0">Projet de fin d'études à l'IUT Bénin. Études de terrain, conception UML, développement des interfaces PWA (React.js) et de l'API backend (Node.js/PostgreSQL).</p>
+                                <p class="text-muted mb-0">Projet de fin d'études à l'IUT Bénin. Études de terrain, conception UML, développement des interfaces PWA et de l'API backend Laravel.</p>
                             </div>
                         </div>
                     </div>
@@ -341,6 +340,5 @@
     <script>
         AOS.init({ duration: 800, once: true, offset: 100 });
     </script>
-    @include('partials.pwa-register')
 </body>
 </html>

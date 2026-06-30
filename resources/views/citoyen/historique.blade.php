@@ -25,26 +25,24 @@
         <h4 class="fw-bold mb-0">Mes alertes</h4>
     </div>
 
-    <div class="history-card">
-        <div class="d-flex justify-content-between align-items-start mb-2">
-            <div>
-                <h6 class="fw-bold mb-1">Cotonou, Quartier Haie Vive</h6>
-                <p class="small text-muted mb-0"><i class="fa-regular fa-calendar me-1"></i> 12 Juin 2026, 14:32</p>
+    @forelse($alertes as $alerte)
+        <div class="history-card">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+                <div>
+                    <h6 class="fw-bold mb-1">{{ $alerte->commune }}</h6>
+                    <p class="small text-muted mb-0"><i class="fa-regular fa-calendar me-1"></i> {{ $alerte->created_at->locale('fr')->isoFormat('D MMM YYYY, HH:mm') }}</p>
+                </div>
+                <span class="{{ $alerte->statut === 'terminee' ? 'badge-success' : 'badge bg-secondary bg-opacity-10 text-secondary' }}" style="font-size: 0.8rem; font-weight: 600;">
+                    {{ $alerte->statut === 'terminee' ? 'Intervention réussie' : ucfirst(str_replace('_', ' ', $alerte->statut)) }}
+                </span>
             </div>
-            <span class="badge-success">Intervention réussie</span>
+            <p class="small text-muted mb-0">{{ $alerte->description ?: 'Aucune description fournie.' }}</p>
         </div>
-        <p class="small text-muted mb-0">Temps de réponse : 8 min</p>
-    </div>
-
-    <div class="history-card" style="border-left-color: #cbd5e1;">
-        <div class="d-flex justify-content-between align-items-start mb-2">
-            <div>
-                <h6 class="fw-bold mb-1">Abomey-Calavi, Gbégamey</h6>
-                <p class="small text-muted mb-0"><i class="fa-regular fa-calendar me-1"></i> 05 Mai 2026, 09:15</p>
-            </div>
-            <span class="badge bg-secondary bg-opacity-10 text-secondary" style="font-size: 0.8rem; font-weight: 600;">Annulée par l'utilisateur</span>
+    @empty
+        <div class="history-card" style="border-left-color: #cbd5e1;">
+            <p class="text-muted mb-0">Aucune alerte enregistrée pour le moment.</p>
         </div>
-    </div>
+    @endforelse
 
     <button class="fab-new" onclick="window.location.href='/citoyen/nouvelle-alerte'">
         <i class="fa-solid fa-plus"></i>

@@ -12,12 +12,19 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\SignalementController;
 
 // Pages publiques
-Route::get('/', function () { return view('welcome'); });
-Route::get('/a-propos', function () { return view('a-propos'); });
-Route::get('/fonctionnalites', function () { return view('fonctionnalites'); });
-Route::get('/partenaires', function () { return view('partenaires'); });
-Route::get('/contact', function () { return view('contact'); });
-Route::get('/mentions-legales', function () { return view('mentions-legales'); });
+Route::get('/', [App\Http\Controllers\PageController::class, 'home']);
+Route::get('/a-propos', function () {
+    return view('a-propos');
+});
+Route:: get('/fonctionnalites', function () {
+    return view('fonctionnalites');
+});
+Route::get('/partenaires', function () {
+    return view('partenaires');
+});
+Route::get('/contact', [App\Http\Controllers\PageController::class, 'show']);
+Route::post('/contact', [App\Http\Controllers\PageController::class, 'contact']);
+Route::get('/mentions-legales', [App\Http\Controllers\PageController::class, 'legal']);
 
 //CITOYEN AUTH (public) 
 Route::get('/citoyen/auth', [CitoyenController::class, 'auth']);
@@ -78,7 +85,7 @@ Route::post('/admin/login', [AdminController::class, 'authentifier']);
 Route::get('/admin/deconnexion', [AdminController::class, 'deconnexion']);
 
 
-//ADMIN (protégé) 
+//ADMIN (protégé)
 Route::middleware('auth.admin')->group(function () {
     Route::post('/admin/utilisateurs/supprimer', [AdminController::class, 'supprimerSelection']);
     Route::get('/admin/dashboard', [AdminController::class, 'dashboard']);
