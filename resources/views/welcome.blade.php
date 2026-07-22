@@ -172,10 +172,6 @@
         <div class="container position-relative" style="z-index: 2;">
             <div class="row align-items-center">
                 <div class="col-lg-6" data-aos="fade-right">
-                    <div class="hero-badge">
-                        <span class="pulse-dot"></span>
-                        Projet officiel du Gouvernement du Bénin
-                    </div>
                     <h1>Chaque seconde compte pour <span class="highlight">sauver des vies</span></h1>
                     <p class="lead">
                         Secours Bénin révolutionne la gestion des urgences médicales au Bénin. 
