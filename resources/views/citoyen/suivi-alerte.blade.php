@@ -89,18 +89,139 @@
         </button>
     </div>
 
-    <!-- Leaflet JS -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script>
-        // Initialisation de la carte (Cotonou)
-        const map = L.map('map', { zoomControl: false }).setView([6.3654, 2.4183], 14);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap'
-        }).addTo(map);
+   <!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+    // Position réelle du citoyen (fallback sur Cotonou si l'alerte n'a pas de GPS)
+    const citoyenLat = {{ $alerte->latitude ?? 6.3654 }};
+    const citoyenLng = {{ $alerte->longitude ?? 2.4183 }};
 
-        // Marqueur utilisateur
-        L.marker([6.3654, 2.4183]).addTo(map).bindPopup("Votre position").openPopup();
-    </script>
+    const map = L.map('map', { zoomControl: false }).setView([citoyenLat, citoyenLng], 14);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap'
+    }).addTo(map);
+
+    const citizenMarker = L.marker([citoyenLat, citoyenLng]).addTo(map).bindPopup("Votre position").openPopup();
+    const ambulanceIcon = L.divIcon({
+        html: '🚑',
+        iconSize: [30, 30],
+        className: ''
+    });
+    let ambulanceMarker = null;
+
+    @if ($mission && $mission->ambulance && $mission->ambulance->latitude && $mission->ambulance->longitude)
+        ambulanceMarker = L.marker(
+            [{{ $mission->ambulance->latitude }}, {{ $mission->ambulance->longitude }}],
+            { icon: ambulanceIcon }
+        ).addTo(map).bindPopup("Ambulance {{ $mission->ambulance->matricule }}");
+
+        const bounds = L.latLngBounds([
+            [citoyenLat, citoyenLng],
+            [{{ $mission->ambulance->latitude }}, {{ $mission->ambulance->longitude }}]
+        ]);
+        map.fitBounds(bounds, { padding: [50, 50] });
+    @endif
+
+    function setTimelineState(stepElement, active, completed) {
+        stepElement.classList.remove('active', 'completed');
+        if (completed) {
+            stepElement.classList.add('completed');
+        } else if (active) {
+            stepElement.classList.add('active');
+        }
+    }
+
+    function updateTimeline(alerte, mission) {
+        const stepEnRoute = document.getElementById('step-en-route');
+        const stepArrive = document.getElementById('step-arrive');
+
+        if (!alerte) {
+            setTimelineState(stepEnRoute, false, false);
+            setTimelineState(stepArrive, false, false);
+            stepEnRoute.querySelector('h6').textContent = 'En attente d’assignation';
+            stepEnRoute.querySelector('p').textContent = 'Aucune alerte n’a encore été assignée.';
+            stepArrive.querySelector('h6').textContent = 'En attente...';
+            stepArrive.querySelector('p').textContent = 'En attente de la progression de la mission.';
+            return;
+        }
+
+        if (!mission) {
+            setTimelineState(stepEnRoute, true, false);
+            setTimelineState(stepArrive, false, false);
+            stepEnRoute.querySelector('h6').textContent = 'En attente d’assignation';
+            stepEnRoute.querySelector('p').textContent = 'Aucune ambulance assignée pour le moment.';
+            stepArrive.querySelector('h6').textContent = 'En attente...';
+            stepArrive.querySelector('p').textContent = 'En attente de la progression de la mission.';
+            return;
+        }
+
+        const statut = mission.statut;
+        const hasArrived = ['sur_place', 'terminee'].includes(statut);
+        const isEnRoute = statut === 'en_route';
+
+        setTimelineState(stepEnRoute, statut !== 'assignee', true);
+        setTimelineState(stepArrive, isEnRoute, hasArrived);
+
+        if (isEnRoute) {
+            stepEnRoute.querySelector('h6').textContent = 'Ambulance dispatchée';
+            stepEnRoute.querySelector('p').textContent = mission.ambulance ? `Véhicule ${mission.ambulance.matricule} • EN ROUTE.` : 'Véhicule en route.';
+            stepArrive.querySelector('h6').textContent = 'Ambulance en route';
+            stepArrive.querySelector('p').textContent = 'L’ambulance est en route vers votre position.';
+        } else if (hasArrived) {
+            stepEnRoute.querySelector('h6').textContent = 'Ambulance dispatchée';
+            stepEnRoute.querySelector('p').textContent = mission.ambulance ? `Véhicule ${mission.ambulance.matricule} • ${statut.toUpperCase()}.` : 'Véhicule assigné.';
+            stepArrive.querySelector('h6').textContent = 'Arrivée sur les lieux';
+            stepArrive.querySelector('p').textContent = 'Intervention en cours ou terminée.';
+        } else {
+            stepEnRoute.querySelector('h6').textContent = 'Ambulance dispatchée';
+            stepEnRoute.querySelector('p').textContent = mission.ambulance ? `Véhicule ${mission.ambulance.matricule} • ${statut.toUpperCase()}.` : 'Véhicule assigné.';
+            stepArrive.querySelector('h6').textContent = 'En attente...';
+            stepArrive.querySelector('p').textContent = 'En attente de la progression de la mission.';
+        }
+    }
+
+    async function refreshSuivi() {
+        try {
+            const response = await fetch('/citoyen/suivi-alerte/data', {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            });
+            const data = await response.json();
+            if (!data.success) {
+                return;
+            }
+
+            updateTimeline(data.alerte, data.mission);
+
+            if (data.mission && data.mission.ambulance && data.mission.ambulance.latitude && data.mission.ambulance.longitude) {
+                const lat = parseFloat(data.mission.ambulance.latitude);
+                const lng = parseFloat(data.mission.ambulance.longitude);
+                if (!ambulanceMarker) {
+                    ambulanceMarker = L.marker([lat, lng], { icon: ambulanceIcon })
+                        .addTo(map)
+                        .bindPopup(`Ambulance ${data.mission.ambulance.matricule}`);
+                } else {
+                    ambulanceMarker.setLatLng([lat, lng]);
+                    ambulanceMarker.setPopupContent(`Ambulance ${data.mission.ambulance.matricule}`);
+                }
+
+                const bounds = L.latLngBounds([
+                    [citoyenLat, citoyenLng],
+                    [lat, lng]
+                ]);
+                map.fitBounds(bounds, { padding: [50, 50] });
+            } else if (ambulanceMarker) {
+                map.removeLayer(ambulanceMarker);
+                ambulanceMarker = null;
+                map.setView([citoyenLat, citoyenLng], 14);
+            }
+        } catch (error) {
+            console.error('Erreur de suivi en temps réel :', error);
+        }
+    }
+
+    setInterval(refreshSuivi, 10000);
+</script>
+
 
 @include('partials.pwa-register')
 </body>

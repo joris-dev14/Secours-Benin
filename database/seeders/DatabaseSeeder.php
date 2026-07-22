@@ -16,6 +16,14 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         // User::factory(10)->create();
+        $this->call([
+        CommunesOfficiellesSeeder::class,
+        AdminSeeder::class,
+        RegulateurSeeder::class,
+        AmbulancierSeeder::class,
+        AmbulanceSeeder::class,
+        PageContentSeeder::class,
+        ]);
 
         User::factory()->create([
             'name' => 'Test User',

@@ -195,11 +195,11 @@ public function territoire()
         return redirect('/admin/login');
     }
 
-    $ambulancesParCommune = Ambulance::selectRaw('commune, COUNT(*) as total')
+    $ambulancesParCommune = Ambulance::selectRaw('LOWER(commune) as commune, COUNT(*) as total')
         ->groupBy('commune')
         ->pluck('total', 'commune');
 
-    $citoyensParCommune = Alerte::selectRaw('commune, COUNT(DISTINCT citoyen_id) as total')
+    $citoyensParCommune = Alerte::selectRaw('LOWER(commune) as commune, COUNT(DISTINCT citoyen_id) as total')
         ->groupBy('commune')
         ->pluck('total', 'commune');
 
@@ -289,6 +289,8 @@ public function supprimerHopital($id)
         'centre_samu'      => 'required|string',
         'numero_vert'      => 'nullable|string',
         'rayon_couverture' => 'required|integer',
+        'latitude'         => 'nullable|numeric|between:-90,90',
+        'longitude'        => 'nullable|numeric|between:-180,180',
     ]);
 
     \App\Models\Commune::find($id)->update([
@@ -296,6 +298,8 @@ public function supprimerHopital($id)
         'numero_vert'      => $request->numero_vert,
         'rayon_couverture' => $request->rayon_couverture,
         'redirection_auto' => $request->has('redirection_auto'),
+        'latitude'         => $request->latitude?: null,
+        'longitude'        => $request->longitude?: null,
     ]);
 
     return redirect('/admin/territoire')->with('success', 'Configuration mise à jour avec succès !');

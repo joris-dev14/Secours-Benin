@@ -39,6 +39,7 @@ Route::middleware('auth.citoyen')->group(function () {
     Route::get('/citoyen/nouvelle-alerte', [AlerteController::class, 'nouvelle']);
     Route::post('/citoyen/nouvelle-alerte', [AlerteController::class, 'envoyer']);
     Route::get('/citoyen/suivi-alerte', [AlerteController::class, 'suivi']);
+    Route::get('/citoyen/suivi-alerte/data', [AlerteController::class, 'suiviData']);
     Route::get('/citoyen/historique', [AlerteController::class, 'historique']);
 });
 
@@ -73,8 +74,11 @@ Route::get('/ambulancier/deconnexion', [AmbulancierController::class, 'deconnexi
 Route::middleware('auth.ambulancier')->group(function () {
     Route::get('/ambulancier/missions', [MissionController::class, 'index']);
     Route::get('/ambulancier/mission-active', [MissionController::class, 'active']);
+    Route::get('/ambulancier/mission-active/data', [MissionController::class, 'activeData']);
     Route::get('/ambulancier/historique', [MissionController::class, 'historique']);
     Route::post('/ambulancier/mission/{id}/statut', [MissionController::class, 'updateStatut']);
+    Route::post('/ambulance/{id}/statut', [AmbulanceController::class, 'updateStatut']);
+    Route::post('/ambulance/{id}/position', [AmbulanceController::class, 'updatePosition']);
     Route::get('/ambulancier/parametres', [AmbulancierController::class, 'parametres']);
     Route::post('/ambulancier/parametres', [AmbulancierController::class, 'changerMotDePasse']);
 });
@@ -110,7 +114,5 @@ Route::middleware('auth.admin')->group(function () {
     });
     
 //AMBULANCES & SIGNALEMENTS 
-Route::post('/ambulance/{id}/statut', [AmbulanceController::class, 'updateStatut']);
-Route::post('/ambulance/{id}/position', [AmbulanceController::class, 'updatePosition']);
 Route::post('/signalement/{id}/traiter', [SignalementController::class, 'traiter']);
 Route::post('/signalement/{id}/bloquer', [SignalementController::class, 'bloquerCitoyen']);

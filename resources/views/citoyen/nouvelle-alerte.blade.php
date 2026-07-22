@@ -95,8 +95,7 @@
                 </div>
 
                 <!-- Bouton d'envoi -->
-                <button type="button" class="btn btn-send" id="sendBtn" onclick="sendAlert()">
-                    <span id="btnText"><i class="fa-solid fa-paper-plane me-2"></i> ENVOYER L'ALERTE</span>
+                    <button type="button" class="btn btn-send" id="sendBtn" onclick="sendAlert()" disabled>                    <span id="btnText"><i class="fa-solid fa-paper-plane me-2"></i> ENVOYER L'ALERTE</span>
                     <span id="btnSpinner" class="d-none"><span class="spinner-border spinner-border-sm me-2" role="status"></span> Compression et envoi...</span>
                 </button>
             </div>
@@ -104,18 +103,41 @@
     </div>
     <script>
         // GPS réel
+        let gpsPret = false;
+
+        function activerBoutonEnvoi() {
+            gpsPret = true;
+            document.getElementById('sendBtn').disabled = false;
+        }
+
         if (navigator.geolocation) {
+            const options = { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 };
+
             navigator.geolocation.getCurrentPosition(
                 (position) => {
                     document.getElementById('latitude').value = position.coords.latitude;
                     document.getElementById('longitude').value = position.coords.longitude;
+                    document.getElementById('gpsStatus').classList.remove('text-danger', 'text-warning');
+                    document.getElementById('gpsStatus').classList.add('text-success');
                     document.getElementById('gpsText').textContent =
                         "GPS localisé : " + position.coords.latitude.toFixed(4) + "° N, " + position.coords.longitude.toFixed(4) + "° E";
+                    activerBoutonEnvoi();
                 },
                 () => {
-                    document.getElementById('gpsText').textContent = "Localisation non disponible";
-                }
+                    document.getElementById('gpsStatus').classList.remove('text-success', 'text-warning');
+                    document.getElementById('gpsStatus').classList.add('text-danger');
+                    document.getElementById('gpsText').textContent =
+                        "Localisation indisponible — vous pouvez tout de même envoyer l'alerte, mais votre position ne sera pas précise.";
+                    activerBoutonEnvoi();
+                },
+                options
             );
+        } else {
+            document.getElementById('gpsStatus').classList.remove('text-success', 'text-danger');
+            document.getElementById('gpsStatus').classList.add('text-warning');
+            document.getElementById('gpsText').textContent =
+                "Géolocalisation non supportée par cet appareil. Vous pouvez tout de même envoyer l'alerte.";
+            activerBoutonEnvoi();
         }
 
         const communesByDepartement = @json($departements->map(function ($items) {
@@ -167,6 +189,7 @@
         }
 
         function sendAlert() {
+             if (!gpsPret) { return; }
             const departement = document.getElementById('departement').value;
             const commune = document.getElementById('commune').value;
             const photo = document.getElementById('photoInput').files.length;

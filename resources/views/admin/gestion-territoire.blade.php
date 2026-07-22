@@ -162,15 +162,47 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
     const toutesLesCommunes = {!! json_encode($communes) !!};
+    let communesAffichees = [];
 
     const map = L.map('map').setView([6.4, 2.4], 8);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OSM' }).addTo(map);
+    const markerLayer = L.layerGroup().addTo(map);
 
-    toutesLesCommunes.filter(c => c.statut === 'active' && c.latitude && c.longitude)
-        .forEach(c => {
-            L.marker([c.latitude, c.longitude]).addTo(map)
-                .bindPopup(`<strong>${c.centre_samu}</strong>`);
+    function renderMarkers(communes, selectedCommune = null) {
+        markerLayer.clearLayers();
+
+        const points = communes.filter(c => c.statut === 'active' && c.latitude && c.longitude);
+
+        points.forEach((commune) => {
+            const latitude = Number(commune.latitude);
+            const longitude = Number(commune.longitude);
+
+            if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+                return;
+            }
+
+            const marker = L.marker([latitude, longitude]).bindPopup(
+                `<strong>${commune.nom}</strong><br>${commune.centre_samu ?? 'Aucun centre assigné'}`
+            );
+
+            if (selectedCommune && commune.id === selectedCommune.id) {
+                marker.openPopup();
+            }
+
+            markerLayer.addLayer(marker);
         });
+
+        if (selectedCommune) {
+            const latitude = Number(selectedCommune.latitude);
+            const longitude = Number(selectedCommune.longitude);
+            if (Number.isFinite(latitude) && Number.isFinite(longitude)) {
+                map.setView([latitude, longitude], 10);
+            }
+        } else if (points.length > 0) {
+            const bounds = L.latLngBounds(points.map(c => [Number(c.latitude), Number(c.longitude)]));
+            map.fitBounds(bounds, { padding: [30, 30] });
+        }
+    }
 
     function creerCarteCommune(commune) {
         const div = document.createElement('div');
@@ -222,6 +254,7 @@
         });
 
         const container = document.getElementById('communeListContainer');
+        communesAffichees = resultats;
         container.innerHTML = '';
 
         if (resultats.length === 0) {
@@ -235,6 +268,7 @@
             container.appendChild(carte);
         });
 
+        renderMarkers(resultats, resultats[0]);
         selectCommune(container.firstChild, resultats[0]);
     }
 
@@ -253,7 +287,9 @@
         document.getElementById('configForm').action = `/admin/territoire/${commune.id}`;
         document.getElementById('hopitauxListe').innerHTML = commune.hopitaux.length > 0
         ? commune.hopitaux.map(h => `<span class="hospital-badge">${h.nom} <i class="fa-solid fa-xmark ms-1" style="cursor:pointer;" onclick="supprimerHopital(${h.id})"></i></span>`).join(' ')
-        : '<span class="text-muted small">Aucun hôpital</span>';    
+        : '<span class="text-muted small">Aucun hôpital</span>';
+
+        renderMarkers(communesAffichees, commune);
     }
     function ajouterHopital() {
         const nom = document.getElementById('nouvelHopitalInput').value.trim();

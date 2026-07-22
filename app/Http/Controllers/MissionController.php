@@ -3,6 +3,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Mission;
 use App\Models\Ambulance;
+use App\Models\Ambulancier;
 use Illuminate\Http\Request;
 
 class MissionController extends Controller
@@ -41,13 +42,43 @@ class MissionController extends Controller
         }
         $ambulancier = \App\Models\Ambulancier::find(session('ambulancier_id'));
         $ambulanceId = $this->resolveAmbulanceId($ambulancier);
-        $mission = Mission::with(['alerte'])
+        $mission = Mission::with(['alerte', 'ambulance'])
             ->whereIn('statut', ['assignee', 'en_route', 'sur_place'])
             ->whereHas('ambulance', function($q) use ($ambulanceId) {
                 $q->where('id', $ambulanceId);
             })->first();
 
         return view('ambulancier.mission-active', compact('mission'));
+    }
+
+    public function activeData()
+    {
+        if (!session('ambulancier_id')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Non autorisé.',
+            ], 401);
+        }
+
+        $ambulancier = \App\Models\Ambulancier::find(session('ambulancier_id'));
+        $ambulanceId = $this->resolveAmbulanceId($ambulancier);
+        $mission = Mission::with(['alerte', 'ambulance'])
+            ->whereIn('statut', ['assignee', 'en_route', 'sur_place'])
+            ->where('ambulance_id', $ambulanceId)
+            ->first();
+
+        return response()->json([
+            'success' => true,
+            'mission' => $mission ? [
+                'id' => $mission->id,
+                'statut' => $mission->statut,
+                'depart_a' => $mission->depart_a?->toDateTimeString(),
+                'arrive_a' => $mission->arrive_a?->toDateTimeString(),
+                'termine_a' => $mission->termine_a?->toDateTimeString(),
+                'alerte' => $mission->alerte ? $mission->alerte->only(['id', 'commune', 'latitude', 'longitude', 'statut']) : null,
+                'ambulance' => $mission->ambulance ? $mission->ambulance->only(['id', 'matricule', 'latitude', 'longitude']) : null,
+            ] : null,
+        ]);
     }
 
     public function updateStatut(Request $request, $id)
@@ -63,6 +94,11 @@ class MissionController extends Controller
         $mission = Mission::findOrFail($id);
         $alert = $mission->alerte;
         $ambulance = $mission->ambulance;
+
+        $currentAmbulancier = Ambulancier::find(session('ambulancier_id'));
+        if (!$currentAmbulancier || !$ambulance || $ambulance->ambulancier_id !== $currentAmbulancier->id) {
+            abort(403);
+        }
 
         switch ($request->statut) {
             case 'en_route':

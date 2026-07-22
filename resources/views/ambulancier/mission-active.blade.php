@@ -237,14 +237,90 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        @if($mission && $mission->alerte->latitude)
-        const map = L.map('map').setView([{{ $mission->alerte->latitude }}, {{ $mission->alerte->longitude }}], 15);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OSM' }).addTo(map);
-        L.marker([{{ $mission->alerte->latitude }}, {{ $mission->alerte->longitude }}])
-            .addTo(map).bindPopup("Lieu de l'incident").openPopup();
-        @endif
-
         const csrfToken = '{{ csrf_token() }}';
+        const missionId = {{ $mission ? $mission->id : 'null' }};
+        let ambulanceMarker = null;
+        let incidentMarker = null;
+        let map = null;
+        const incidentLat = {{ $mission && $mission->alerte->latitude ? $mission->alerte->latitude : 6.3654 }};
+        const incidentLng = {{ $mission && $mission->alerte->longitude ? $mission->alerte->longitude : 2.4183 }};
+
+        if (missionId) {
+            map = L.map('map').setView([incidentLat, incidentLng], 15);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OSM' }).addTo(map);
+            incidentMarker = L.marker([incidentLat, incidentLng]).addTo(map).bindPopup("Lieu de l'incident").openPopup();
+        }
+
+        async function refreshMission() {
+            if (!missionId) return;
+
+            try {
+                const response = await fetch('/ambulancier/mission-active/data', {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+                const data = await response.json();
+                if (!data.success || !data.mission) {
+                    return;
+                }
+
+                const mission = data.mission;
+                if (mission.ambulance && mission.ambulance.latitude && mission.ambulance.longitude) {
+                    const lat = parseFloat(mission.ambulance.latitude);
+                    const lng = parseFloat(mission.ambulance.longitude);
+                    if (!ambulanceMarker) {
+                        ambulanceMarker = L.marker([lat, lng], {
+                            icon: L.divIcon({ html: '🚑', iconSize: [30, 30], className: '' })
+                        }).addTo(map).bindPopup(`Ambulance ${mission.ambulance.matricule}`);
+                    } else {
+                        ambulanceMarker.setLatLng([lat, lng]);
+                        ambulanceMarker.setPopupContent(`Ambulance ${mission.ambulance.matricule}`);
+                    }
+
+                    const bounds = L.latLngBounds([
+                        [incidentLat, incidentLng],
+                        [lat, lng]
+                    ]);
+                    map.fitBounds(bounds, { padding: [50, 50] });
+                }
+            } catch (error) {
+                console.error('Erreur de rafraîchissement de mission :', error);
+            }
+        }
+
+        async function sendPosition(position) {
+            if (!missionId || !position) return;
+
+            const ambulanceId = {{ $mission && $mission->ambulance ? $mission->ambulance->id : 'null' }};
+            if (!ambulanceId) return;
+
+            try {
+                await fetch(`/ambulance/${ambulanceId}/position`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken
+                    },
+                    body: JSON.stringify({
+                        latitude: position.coords.latitude,
+                        longitude: position.coords.longitude
+                    })
+                });
+            } catch (error) {
+                console.error('Erreur envoi position ambulance :', error);
+            }
+        }
+
+        function startGeolocation() {
+            if (!navigator.geolocation) {
+                return;
+            }
+
+            navigator.geolocation.watchPosition(
+                sendPosition,
+                error => console.warn('Géolocalisation indisponible :', error),
+                { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 }
+            );
+        }
 
         async function nextStep(step, missionId) {
             const statuts = { 1: 'en_route', 2: 'sur_place', 3: 'terminee' };
@@ -272,15 +348,19 @@
                 }
             }
         }
-        
+
         document.addEventListener('click', function(e) {
-        const sidebar = document.getElementById('sidebar');
-        const toggleBtn = e.target.closest('[onclick*="sidebar"]');
-        if (sidebar && !sidebar.contains(e.target) && !toggleBtn) {
-            sidebar.classList.remove('show');
+            const sidebar = document.getElementById('sidebar');
+            const toggleBtn = e.target.closest('[onclick*="sidebar"]');
+            if (sidebar && !sidebar.contains(e.target) && !toggleBtn) {
+                sidebar.classList.remove('show');
+            }
+        });
+
+        if (missionId) {
+            startGeolocation();
+            setInterval(refreshMission, 10000);
         }
-    });
-        
     </script>
 @include('partials.pwa-register')
 </body>

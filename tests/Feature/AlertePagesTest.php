@@ -8,11 +8,42 @@ use App\Models\Citoyen;
 use App\Models\Commune;
 use App\Models\Mission;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class AlertePagesTest extends TestCase
 {
     use RefreshDatabase;
+
+    public function test_alert_creation_requires_valid_gps_coordinates(): void
+    {
+        Storage::fake('public');
+
+        $citoyen = Citoyen::factory()->create();
+        Commune::create([
+            'nom' => 'Cotonou',
+            'departement' => 'Littoral',
+            'centre_samu' => 'SAMU Cotonou',
+            'numero_vert' => '112',
+            'latitude' => 6.3654,
+            'longitude' => 2.4183,
+            'rayon_couverture' => 20,
+            'redirection_auto' => true,
+            'statut' => 'active',
+        ]);
+
+        $response = $this->withSession(['citoyen_id' => $citoyen->id])
+            ->post('/citoyen/nouvelle-alerte', [
+                'departement' => 'Littoral',
+                'commune' => 'Cotonou',
+                'description' => 'Accident',
+                'photo' => UploadedFile::fake()->image('alert.jpg', 800, 600),
+            ]);
+
+        $response->assertSessionHasErrors(['latitude', 'longitude']);
+        $this->assertDatabaseCount('alertes', 0);
+    }
 
     public function test_the_citizen_tracking_page_displays_the_latest_alert_and_mission(): void
     {

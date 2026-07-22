@@ -33,6 +33,8 @@ class AlerteController extends Controller
             'commune'     => 'required|string|exists:communes,nom',
             'photo'       => 'required|image|max:5120',
             'description' => 'nullable|string|max:500',
+            'latitude'    => 'required|numeric|between:-90,90',
+            'longitude'   => 'required|numeric|between:-180,180',
         ]);
 
         $photoPath = $request->file('photo')->store('alertes', 'public');
@@ -65,6 +67,33 @@ class AlerteController extends Controller
             : null;
 
         return view('citoyen.suivi-alerte', compact('alerte', 'mission'));
+    }
+
+    public function suiviData()
+    {
+        if (!session('citoyen_id')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Non autorisé.',
+            ], 401);
+        }
+
+        $citoyen = Citoyen::find(session('citoyen_id'));
+        $alerte = $citoyen ? $citoyen->alertes()->latest()->first() : null;
+        $mission = $alerte ? $alerte->mission()->with('ambulance')->first() : null;
+
+        return response()->json([
+            'success' => true,
+            'alerte' => $alerte ? $alerte->only(['id', 'commune', 'latitude', 'longitude', 'statut', 'created_at']) : null,
+            'mission' => $mission ? [
+                'id' => $mission->id,
+                'statut' => $mission->statut,
+                'depart_a' => $mission->depart_a?->toDateTimeString(),
+                'arrive_a' => $mission->arrive_a?->toDateTimeString(),
+                'termine_a' => $mission->termine_a?->toDateTimeString(),
+                'ambulance' => $mission->ambulance ? $mission->ambulance->only(['id', 'matricule', 'latitude', 'longitude']) : null,
+            ] : null,
+        ]);
     }
 
     public function historique()

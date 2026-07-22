@@ -213,7 +213,8 @@ public function exportPdf()
 
         $request->validate([
             'alerte_id'      => 'required|exists:alertes,id',
-            'ambulancier_id' => 'required|exists:ambulanciers,id',
+            'ambulancier_id' => 'required_without:ambulance_id|exists:ambulanciers,id',
+            'ambulance_id'   => 'required_without:ambulancier_id|exists:ambulances,id',
         ]);
 
         $regulateur = Regulateur::find(session('regulateur_id'));
@@ -224,14 +225,24 @@ public function exportPdf()
             ->whereIn(DB::raw('LOWER(commune)'), $communesLower)
             ->firstOrFail();
 
-        $ambulancier = \App\Models\Ambulancier::with('ambulance')
-            ->where('id', $request->ambulancier_id)
-            ->where('statut', 'disponible')
-            ->whereRaw('LOWER(centre) = ?', [mb_strtolower($territoire['commune'])])
-            ->whereNotNull('ambulance_id')
-            ->firstOrFail();
+        if ($request->filled('ambulancier_id')) {
+            $ambulancier = \App\Models\Ambulancier::with('ambulance')
+                ->where('id', $request->ambulancier_id)
+                ->where('statut', 'disponible')
+                ->whereRaw('LOWER(centre) = ?', [mb_strtolower($territoire['commune'])])
+                ->whereNotNull('ambulance_id')
+                ->firstOrFail();
+            $ambulance = $ambulancier->ambulance;
+        } else {
+            $ambulance = Ambulance::with('ambulancier')
+                ->where('id', $request->ambulance_id)
+                ->where('statut', 'disponible')
+                ->firstOrFail();
+            $ambulancier = $ambulance->ambulancier;
+            abort_if(!$ambulancier || $ambulancier->statut !== 'disponible', 404);
+            abort_if(mb_strtolower($ambulancier->centre) !== mb_strtolower($territoire['commune']), 404);
+        }
 
-        $ambulance = $ambulancier->ambulance;
         abort_if(!$ambulance || $ambulance->statut !== 'disponible', 404);
 
         DB::transaction(function () use ($alerte, $ambulance, $ambulancier) {

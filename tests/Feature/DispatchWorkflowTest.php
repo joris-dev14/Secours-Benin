@@ -75,10 +75,10 @@ class DispatchWorkflowTest extends TestCase
         $response = $this->withSession(['regulateur_id' => $regulateur->id])
             ->post('/regulateur/dispatcher', [
                 'alerte_id' => $alerte->id,
-                'ambulance_id' => $ambulance->id,
+                'ambulancier_id' => $ambulancier->id,
             ]);
 
-        $response->assertRedirect('/regulateur/dashboard');
+        $response->assertRedirect('/regulateur/dispatch');
         $this->assertDatabaseHas('missions', [
             'alerte_id' => $alerte->id,
             'ambulance_id' => $ambulance->id,
