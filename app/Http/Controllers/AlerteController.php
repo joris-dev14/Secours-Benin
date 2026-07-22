@@ -33,8 +33,8 @@ class AlerteController extends Controller
             'commune'     => 'required|string|exists:communes,nom',
             'photo'       => 'required|image|max:5120',
             'description' => 'nullable|string|max:500',
-            'latitude'    => 'required|numeric|between:-90,90',
-            'longitude'   => 'required|numeric|between:-180,180',
+            'latitude'    => 'nullable|numeric|between:-90,90',
+            'longitude'   => 'nullable|numeric|between:-180,180',
         ]);
 
         $photoPath = $request->file('photo')->store('alertes', 'public');
